@@ -1,10 +1,9 @@
 import type { Bot } from "grammy";
 import type { Store } from "../db/index.js";
 import { t } from "../i18n.js";
-import { formatOutage, matchesKeyword } from "../notify.js";
+import { RECENT_WINDOW_MS, formatOutage, matchesKeyword } from "../notify.js";
 import { fetchOutages } from "../parser/voda-uz.js";
 
-const ACTIVE_WINDOW_MS = 3 * 24 * 60 * 60_000;
 const MAX_ITEMS = 5;
 
 /** Актуальные (не восстановленные, свежие) отключения; по подпискам, если они есть, иначе все. */
@@ -21,7 +20,7 @@ export function registerSchedule(bot: Bot, store: Store): void {
 
     const subs = store.listSubscriptions(ctx.chat.id);
     const items = outages
-      .filter((o) => o.status === "active" && Date.now() - o.publishedAt.getTime() < ACTIVE_WINDOW_MS)
+      .filter((o) => o.status === "active" && Date.now() - o.publishedAt.getTime() < RECENT_WINDOW_MS)
       .filter((o) => subs.length === 0 || subs.some((k) => matchesKeyword(o, k)))
       .slice(0, MAX_ITEMS);
 
