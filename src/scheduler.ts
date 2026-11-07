@@ -15,11 +15,13 @@ async function pollOnce(bot: Bot, store: Store): Promise<void> {
 
   // От старых к новым.
   for (const o of [...outages].sort((a, b) => a.publishedAt.getTime() - b.publishedAt.getTime())) {
-    if (store.getSeenStatus(o.id) === o.status) continue;
+    const prev = store.getSeenStatus(o.id);
+    if (prev === o.status) continue;
     // Сначала отметка, потом рассылка: лучше потерять уведомление, чем слать дубли при перезапусках.
-    const wasSeen = store.getSeenStatus(o.id) !== undefined;
     store.markSeen(o.id, o.status);
-    if (!seeding || wasSeen) await notifyOutage(bot, store, o);
+    // Известная новость сменила статус — шлём. Новую шлём, только если это не засев и она ещё
+    // активна: «Відновлено» без предшествующего «Відключення» (короткий сбой, простой бота) — шум.
+    if (prev !== undefined || (!seeding && o.status === "active")) await notifyOutage(bot, store, o);
   }
   if (seeding) store.markSeeded();
 }
