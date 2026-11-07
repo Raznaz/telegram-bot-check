@@ -9,7 +9,7 @@ export function registerSubscribe(bot: Bot, store: Store): void {
     const m = t(store.getLang(ctx.chat.id));
     const keyword = normalizeKeyword(ctx.match);
     if (!keyword) return ctx.reply(m.usageSubscribe);
-    if (keyword.length < 2 || keyword.length > 50) return ctx.reply(m.badKeyword);
+    if (keyword.length < 3 || keyword.length > 50) return ctx.reply(m.badKeyword);
     if (!store.addSubscription(ctx.chat.id, keyword)) return ctx.reply(m.tooMany);
     return ctx.reply(m.subscribed(keyword));
   });

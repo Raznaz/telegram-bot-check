@@ -19,6 +19,11 @@ assert.ok(
   "завершённое отключение не должно иметь статус active",
 );
 
+assert.ok(
+  outages.every((o) => Number.isFinite(o.publishedAt.getTime()) && o.publishedAt.getTime() <= Date.now() + 60_000),
+  "дата публикации некорректна или в будущем",
+);
+
 const sample = outages[0]!;
 const word = sample.title.split(" ").find((w) => w.length > 6)!.toLowerCase();
 assert.ok(matchesKeyword(sample, word), "ключевое слово из заголовка должно совпадать");
@@ -46,6 +51,16 @@ try {
   assert.equal(s.getSeenStatus("1"), "restored");
   s.deleteUser(1);
   assert.equal(s.listSubscriptions(1).length, 0, "каскадное удаление подписок");
+
+  // Флаг засева: пустая лента его не ставит, а база с историей считается засеянной.
+  const fresh = Store.open(join(dir, "fresh.db"));
+  assert.equal(fresh.isSeeded(), false, "новая база не засеяна");
+  fresh.markSeeded();
+  fresh.markSeeded();
+  assert.equal(fresh.isSeeded(), true, "markSeeded идемпотентен");
+  const legacy = Store.open(join(dir, "legacy.db"));
+  legacy.markSeen("1", "active");
+  assert.equal(Store.open(join(dir, "legacy.db")).isSeeded(), true, "миграция: база с историей засеяна");
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }

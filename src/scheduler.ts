@@ -9,7 +9,9 @@ async function pollOnce(bot: Bot, store: Store): Promise<void> {
   const outages = await fetchOutages(true);
 
   // Первый запуск: запоминаем текущую ленту без рассылки, чтобы не заспамить старыми новостями.
-  const seeding = store.seenCount() === 0;
+  // Флаг в БД, а не «пустая таблица»: при пустой ленте таблица остаётся пустой, и первое
+  // реальное отключение иначе было бы принято за засев и не разослано.
+  const seeding = !store.isSeeded();
 
   // От старых к новым.
   for (const o of [...outages].sort((a, b) => a.publishedAt.getTime() - b.publishedAt.getTime())) {
@@ -19,6 +21,7 @@ async function pollOnce(bot: Bot, store: Store): Promise<void> {
     store.markSeen(o.id, o.status);
     if (!seeding || wasSeen) await notifyOutage(bot, store, o);
   }
+  if (seeding) store.markSeeded();
 }
 
 /** Периодический опрос; при ошибках сайта интервал растёт экспоненциально (до 4 ч). */

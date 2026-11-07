@@ -3,21 +3,36 @@
 Бот на TypeScript + grammY. Парсить новини КП «Водоканал м. Ужгород» (https://voda.uz.ua/)
 і сповіщає підписників, коли з'являється відключення по їхній вулиці/району.
 
-> Стан: реалізовано (v1). Дані беруться через WordPress REST API сайту (`/wp/v2/posts`), а не скрейпінгом HTML.
+> Дані беруться через WordPress REST API сайту (`/wp/v2/posts`), а не скрейпінгом HTML.
 > Потрібен Node >= 24 (використовується вбудований `node:sqlite`, він друкує ExperimentalWarning).
 
-## Запуск (після узгодження)
+## Запуск
 ```
 cp .env.example .env   # вписати BOT_TOKEN
 npm install
-npm run dev
+npm run dev            # розробка (tsx watch)
+npm run build && npm start   # продакшн
 ```
 
+Запускайте лише один екземпляр бота на токен (long polling + спільна SQLite-база).
+
+## Налаштування (`.env`)
+- `BOT_TOKEN` — токен від @BotFather (обов'язково)
+- `DB_PATH` — файл SQLite, за замовчуванням `./data/bot.db`
+- `POLL_INTERVAL_MIN` — інтервал опитування сайту, хв (>= 15, за замовчуванням 30)
+
 ## Команди бота
-`/start`, `/subscribe <вулиця>`, `/unsubscribe <вулиця>`, `/list`, `/schedule`, `/lang uk|ru`
+`/start`, `/subscribe <вулиця>` (3–50 символів, до 10 підписок), `/unsubscribe <вулиця>`, `/list`, `/schedule`, `/lang uk|ru`
 
 Мова за замовчуванням — українська; російську можна обрати командою `/lang ru`.
-Опит сайту — раз на 30 хв (`POLL_INTERVAL_MIN`).
+Перший опит після створення бази лише запам'ятовує поточну стрічку без розсилки.
+
+## Перевірка без токена
+```
+npm run check
+```
+Парсер на живому сайті, база (`Store`), матчинг підписок, форматування, статуси й дати.
+Результат залежить від поточної стрічки сайту.
 
 ## Структура
 - `src/parser/` — парсинг voda.uz.ua → `Outage[]`
@@ -25,3 +40,4 @@ npm run dev
 - `src/scheduler.ts` — періодичний опит і diff
 - `src/notify.ts` — матч підписок і відправка
 - `src/commands/` — команди grammY
+- `scripts/check.ts` — перевірка без Telegram

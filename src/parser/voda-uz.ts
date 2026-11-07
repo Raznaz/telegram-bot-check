@@ -3,7 +3,7 @@ import type { Outage } from "./types.js";
 
 // voda.uz.ua — WordPress, поэтому берём новости через штатный REST API, а не скрейпим HTML.
 const API_URL =
-  "https://voda.uz.ua/index.php?rest_route=/wp/v2/posts&per_page=20&_fields=id,link,date,title,content";
+  "https://voda.uz.ua/index.php?rest_route=/wp/v2/posts&per_page=20&_fields=id,link,date_gmt,title,content";
 const USER_AGENT = "VodaUzBot/0.1 (Telegram notifier; polling every >=15 min)";
 const CACHE_TTL_MS = 5 * 60_000;
 
@@ -15,7 +15,7 @@ const RESTORED_TITLE = /\((відновлено|виконано|заверше�
 interface WpPost {
   id: number;
   link: string;
-  date: string; // локальное время сайта без таймзони
+  date_gmt: string; // UTC без суффикса «Z»
   title: { rendered: string };
   content: { rendered: string };
 }
@@ -42,7 +42,7 @@ export async function fetchOutages(force = false): Promise<Outage[]> {
         id: String(p.id),
         url: p.link,
         title,
-        publishedAt: new Date(p.date),
+        publishedAt: new Date(`${p.date_gmt}Z`),
         status: RESTORED_TITLE.test(title) ? "restored" : "active",
         body: toText(p.content.rendered),
       };

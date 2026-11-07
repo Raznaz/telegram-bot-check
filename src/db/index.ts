@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS seen_outages (
   id TEXT PRIMARY KEY,
   status TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 `;
 
 export const MAX_SUBSCRIPTIONS = 10;
@@ -35,7 +39,19 @@ export class Store {
     const db = new DatabaseSync(path);
     db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
     db.exec(SCHEMA);
-    return new Store(db);
+    const store = new Store(db);
+    // Миграция: базы, созданные до появления флага, но уже с историей, считаются засеянными.
+    if (!store.isSeeded() && store.seenCount() > 0) store.markSeeded();
+    return store;
+  }
+
+  /** Был ли завершён первый опрос (засев ленты без рассылки). */
+  isSeeded(): boolean {
+    return this.db.prepare("SELECT 1 FROM meta WHERE key = 'seeded'").get() !== undefined;
+  }
+
+  markSeeded(): void {
+    this.db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('seeded', '1')").run();
   }
 
   ensureUser(chatId: number): void {
