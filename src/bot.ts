@@ -4,7 +4,7 @@ import { registerLang } from "./commands/lang.js";
 import { registerList } from "./commands/list.js";
 import { registerSchedule } from "./commands/schedule.js";
 import { registerStart } from "./commands/start.js";
-import { registerSubscribe } from "./commands/subscribe.js";
+import { cancelAwaitingSubscribe, registerSubscribe } from "./commands/subscribe.js";
 import { registerUnsubscribe } from "./commands/unsubscribe.js";
 
 export function createBot(token: string, store: Store): Bot {
@@ -14,6 +14,7 @@ export function createBot(token: string, store: Store): Bot {
   bot.use(async (ctx, next) => {
     if (ctx.chat?.type !== "private") return;
     store.ensureUser(ctx.chat.id);
+    if (ctx.message?.text?.startsWith("/")) cancelAwaitingSubscribe(ctx.chat.id);
     await next();
   });
 
