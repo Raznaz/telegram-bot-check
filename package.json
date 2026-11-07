@@ -4,11 +4,14 @@
   "private": true,
   "type": "module",
   "description": "Telegram-бот: уведомления об отключениях воды (voda.uz.ua)",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsc",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "node --env-file=.env dist/index.js",
+    "check": "tsx scripts/check.ts"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
