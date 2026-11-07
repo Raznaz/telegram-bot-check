@@ -4,7 +4,10 @@ import type { Store } from "./db/index.js";
 import { t, type Lang } from "./i18n.js";
 import type { Outage } from "./parser/types.js";
 
-export const escapeHtml = (s: string) =>
+/** Окно «свежести»: столько после публикации отключение считается актуальным (статус ещё осмыслен). */
+export const RECENT_WINDOW_MS = 3 * 24 * 60 * 60_000;
+
+export const escapeHtml =(s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function matchesKeyword(o: Outage, keyword: string): boolean {
