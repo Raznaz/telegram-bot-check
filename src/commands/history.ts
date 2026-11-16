@@ -2,7 +2,9 @@ import { InlineKeyboard, type Bot } from "grammy";
 import type { Store } from "../db/index.js";
 import { t } from "../i18n.js";
 import { RECENT_WINDOW_MS, escapeHtml, matchesKeyword } from "../notify.js";
+import { menuLabels } from "../menu.js";
 import type { Outage } from "../parser/types.js";
+import type { ChatContext } from "../screen.js";
 import { HISTORY_PERIODS, fetchOutagesSince, isHistoryPeriod } from "../parser/voda-uz.js";
 
 // Лимит Telegram — 4096 символов; считаем по сырому тексту с HTML-тегами, то есть с запасом.
@@ -42,14 +44,16 @@ export function splitMessages(header: string, entries: string[], limit = MESSAGE
 
 /** История отключений по подпискам за период, выбранный кнопкой (7 / 30 / 90 дней). */
 export function registerHistory(bot: Bot, store: Store): void {
-  bot.command("history", (ctx) => {
+  const pickPeriod = (ctx: ChatContext) => {
     const m = t(store.getLang(ctx.chat.id));
     if (store.listSubscriptions(ctx.chat.id).length === 0) return ctx.reply(m.historyNoSubs);
 
     const keyboard = new InlineKeyboard();
     for (const days of HISTORY_PERIODS) keyboard.text(m.periodButton(days), `history:${days}`);
     return ctx.reply(m.historyPick, { reply_markup: keyboard });
-  });
+  };
+  bot.command("history", pickPeriod);
+  bot.hears(menuLabels("history"), pickPeriod);
 
   bot.callbackQuery(/^history:(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery(); // иначе у кнопки в клиенте остаётся индикатор ожидания

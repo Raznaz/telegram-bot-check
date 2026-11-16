@@ -1,4 +1,5 @@
 export type Lang = "uk" | "ru";
+export const LANGS: readonly Lang[] = ["uk", "ru"];
 export const DEFAULT_LANG: Lang = "uk";
 export const isLang = (v: string): v is Lang => v === "uk" || v === "ru";
 
@@ -30,6 +31,26 @@ const dict = {
     restored: "✅ Відновлено",
     active: "🚰 Відключення",
     more: "Детальніше",
+    menuHistory: "📜 Історія",
+    menuSchedule: "🚰 Актуальні",
+    menuSubscriptions: "🔔 Підписки",
+    menuSettings: "⚙️ Налаштування",
+    subsHeader: "Ваші підписки. Натисніть, щоб видалити:",
+    subsEmpty: "Підписок поки немає. Додайте вулицю чи район.",
+    addButton: "➕ Додати",
+    deleteButton: (k: string) => `🗑 ${k}`,
+    langButton: { uk: "Українська", ru: "Русская" },
+    settingsHeader: "Налаштування. Мова інтерфейсу:",
+    hint: "Не зрозумів повідомлення. Скористайтесь кнопками меню внизу або надішліть /start.",
+    commands: {
+      start: "Почати та показати меню",
+      subscribe: "Стежити за вулицею чи районом",
+      unsubscribe: "Мої підписки / відписатись",
+      list: "Список підписок",
+      schedule: "Актуальні відключення",
+      history: "Історія відключень",
+      lang: "Мова / налаштування",
+    },
   },
   ru: {
     start:
@@ -58,6 +79,26 @@ const dict = {
     restored: "✅ Восстановлено",
     active: "🚰 Отключение",
     more: "Подробнее",
+    menuHistory: "📜 История",
+    menuSchedule: "🚰 Актуальные",
+    menuSubscriptions: "🔔 Подписки",
+    menuSettings: "⚙️ Настройки",
+    subsHeader: "Ваши подписки. Нажмите, чтобы удалить:",
+    subsEmpty: "Подписок пока нет. Добавьте улицу или район.",
+    addButton: "➕ Добавить",
+    deleteButton: (k: string) => `🗑 ${k}`,
+    langButton: { uk: "Українська", ru: "Русская" },
+    settingsHeader: "Настройки. Язык интерфейса:",
+    hint: "Не понял сообщение. Воспользуйтесь кнопками меню внизу или отправьте /start.",
+    commands: {
+      start: "Начать и показать меню",
+      subscribe: "Следить за улицей или районом",
+      unsubscribe: "Мои подписки / отписаться",
+      list: "Список подписок",
+      schedule: "Актуальные отключения",
+      history: "История отключений",
+      lang: "Язык / настройки",
+    },
   },
 } as const;
 

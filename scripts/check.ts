@@ -6,6 +6,10 @@ import { join } from "node:path";
 import { Store, MAX_SUBSCRIPTIONS } from "../src/db/index.js";
 import { formatOutage, matchesKeyword } from "../src/notify.js";
 import { formatHistoryEntry, formatKyivDay, splitMessages } from "../src/commands/history.js";
+import { buildSettingsScreen } from "../src/commands/lang.js";
+import { buildSubscriptionsScreen, findByHash, keywordHash } from "../src/commands/subscriptions.js";
+import { LANGS } from "../src/i18n.js";
+import { commandList, isMenuLabel, menuAction, menuLabels, type MenuAction } from "../src/menu.js";
 import type { Outage } from "../src/parser/types.js";
 import { fetchOutages, fetchOutagesSince } from "../src/parser/voda-uz.js";
 
@@ -70,6 +74,41 @@ assert.ok(parts.length > 1, "длинный список делится на н�
 assert.ok(parts.every((p) => p.length <= 1000), "сообщение не длиннее лимита");
 assert.deepEqual(parts.join("\n").split("\n"), ["HEADER", ...entries], "записи не теряются, не дублируются, порядок сохранён");
 assert.deepEqual(splitMessages("H", [], 1000), ["H"], "без записей остаётся один заголовок");
+
+// Меню: подписи уникальны, распознаются на обоих языках, список команд содержит history.
+const actions: MenuAction[] = ["history", "schedule", "subscriptions", "settings"];
+const labels = actions.flatMap((a) => menuLabels(a));
+assert.equal(new Set(labels).size, labels.length, "подписи кнопок не уникальны между действиями и языками");
+for (const a of actions) for (const l of menuLabels(a)) assert.equal(menuAction(l), a, `подпись «${l}» не распознана`);
+assert.equal(menuAction("Мартина"), undefined, "обычный текст не должен быть кнопкой");
+assert.ok(!isMenuLabel("/history") && isMenuLabel(menuLabels("history")[0]!));
+for (const lang of LANGS) assert.ok(commandList(lang).some((c) => c.command === "history"), `нет history в меню (${lang})`);
+
+// Экран подписок: данные кнопки <= 64 байт, поиск по хэшу только среди своих подписок.
+const longKw = "я".repeat(50);
+const subsScreen = buildSubscriptionsScreen("uk", ["мартина", longKw]);
+const buttons = subsScreen.keyboard.inline_keyboard.flat();
+assert.equal(buttons.length, 3, "две подписки и «Додати»");
+for (const b of buttons) {
+  assert.ok("callback_data" in b && Buffer.byteLength(b.callback_data) <= 64, "данные кнопки длиннее 64 байт");
+}
+const hash = keywordHash(longKw);
+assert.equal(findByHash(["мартина", longKw], hash), longKw, "поиск по хэшу находит подписку");
+assert.equal(findByHash(["мартина"], hash), undefined, "удалённая или чужая подписка не находится");
+assert.equal(findByHash([], hash), undefined);
+const emptyScreen = buildSubscriptionsScreen("ru", []);
+assert.equal(emptyScreen.keyboard.inline_keyboard.flat().length, 1, "пустой экран: только «Добавить»");
+assert.notEqual(emptyScreen.text, buildSubscriptionsScreen("ru", ["мартина"]).text, "у пустого экрана свой текст");
+
+// Экран настроек: отметка только у текущего языка.
+for (const cur of LANGS) {
+  const row = buildSettingsScreen(cur).keyboard.inline_keyboard.flat();
+  assert.deepEqual(
+    row.filter((b) => b.text.startsWith("✅")).map((b) => ("callback_data" in b ? b.callback_data : "")),
+    [`lang:set:${cur}`],
+    `отметка языка ${cur}`,
+  );
+}
 
 const sample = outages[0]!;
 const word = sample.title.split(" ").find((w) => w.length > 6)!.toLowerCase();
