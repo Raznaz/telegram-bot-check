@@ -2,13 +2,15 @@ import type { Bot } from "grammy";
 import type { Store } from "../db/index.js";
 import { t } from "../i18n.js";
 import { RECENT_WINDOW_MS, formatOutage, matchesKeyword } from "../notify.js";
+import { menuLabels } from "../menu.js";
 import { fetchOutages } from "../parser/voda-uz.js";
+import type { ChatContext } from "../screen.js";
 
 const MAX_ITEMS = 5;
 
 /** Актуальные (не восстановленные, свежие) отключения; по подпискам, если они есть, иначе все. */
 export function registerSchedule(bot: Bot, store: Store): void {
-  bot.command("schedule", async (ctx) => {
+  const showSchedule = async (ctx: ChatContext) => {
     const m = t(store.getLang(ctx.chat.id));
     let outages;
     try {
@@ -32,5 +34,7 @@ export function registerSchedule(bot: Bot, store: Store): void {
         link_preview_options: { is_disabled: true },
       });
     }
-  });
+  };
+  bot.command("schedule", showSchedule);
+  bot.hears(menuLabels("schedule"), showSchedule);
 }

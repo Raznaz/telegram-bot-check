@@ -1,6 +1,7 @@
 import type { Bot, Context } from "grammy";
 import type { Store } from "../db/index.js";
 import { t } from "../i18n.js";
+import type { ChatContext } from "../screen.js";
 
 export const normalizeKeyword = (raw: string) => raw.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -14,6 +15,12 @@ export const cancelAwaitingSubscribe = (chatId: number): void => {
   awaiting.delete(chatId);
 };
 
+/** Диалог «назовите улицу»: общий для `/subscribe` без аргумента и кнопки «Додати». */
+export function askForKeyword(ctx: ChatContext, store: Store) {
+  awaiting.set(ctx.chat.id, Date.now() + AWAIT_TTL_MS);
+  return ctx.reply(t(store.getLang(ctx.chat.id)).askSubscribe);
+}
+
 export function registerSubscribe(bot: Bot, store: Store): void {
   const subscribe = (ctx: Context, chatId: number, raw: string) => {
     const m = t(store.getLang(chatId));
@@ -25,11 +32,9 @@ export function registerSubscribe(bot: Bot, store: Store): void {
     return ctx.reply(m.subscribed(keyword));
   };
 
-  bot.command("subscribe", (ctx) => {
-    if (normalizeKeyword(ctx.match)) return subscribe(ctx, ctx.chat.id, ctx.match);
-    awaiting.set(ctx.chat.id, Date.now() + AWAIT_TTL_MS);
-    return ctx.reply(t(store.getLang(ctx.chat.id)).askSubscribe);
-  });
+  bot.command("subscribe", (ctx) =>
+    normalizeKeyword(ctx.match) ? subscribe(ctx, ctx.chat.id, ctx.match) : askForKeyword(ctx, store),
+  );
 
   // Ответ на «/subscribe» без аргумента; иначе сообщение идёт дальше по цепочке.
   bot.on("message:text", (ctx, next) => {
